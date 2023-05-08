@@ -28,10 +28,18 @@ public class MainController {
     }
 
     @GetMapping("/main")
-    public String main(Model model) {
-        List<Message> messages = messageRepository.findAll();
+    public String main(Model model, @RequestParam(required = false) String filter) {
+//        List<Message> messages = messageRepository.findAll();
+        List<Message> messages;
+
+        if (filter != null && !filter.isEmpty()) {
+            messages = messageRepository.findByTag(filter);
+        } else {
+            messages = messageRepository.findAll();
+        }
+
         model.addAttribute("messages", messages);
-        model.addAttribute("message", new Message());
+        model.addAttribute("filter", filter);
         return "main";
     }
 
@@ -41,19 +49,18 @@ public class MainController {
         messageRepository.save(message);
         List<Message> messages = messageRepository.findAll();
         model.addAttribute("messages", messages);
-        model.addAttribute("message", new Message());
         return "main";
     }
 
-    @PostMapping("/filter")
-    public String filter(@RequestParam String filter, Model model) {
-        List<Message> messages;
-        if (filter != null && !filter.isEmpty()) {
-            messages = messageRepository.findByTag(filter);
-        } else {
-            messages = messageRepository.findAll();
-        }
-        model.addAttribute("messages", messages);
-        return "main";
-    }
+//    @PostMapping("/filter")
+//    public String filter(@RequestParam String filter, Model model) {
+//        List<Message> messages;
+//        if (filter != null && !filter.isEmpty()) {
+//            messages = messageRepository.findByTag(filter);
+//        } else {
+//            messages = messageRepository.findAll();
+//        }
+//        model.addAttribute("messages", messages);
+//        return "main";
+//    }
 }
