@@ -18,6 +18,8 @@ public class Message {
     @JoinColumn(name = "user_id")
     private User author;
 
+    private String filename;
+
     public String getAuthorName() {
         return author != null ? author.getUsername() : "<none>";
     }
@@ -29,7 +31,6 @@ public class Message {
         this.text = text;
         this.tag = tag;
         this.author = user;
-
     }
 
     public User getAuthor() {
@@ -64,12 +65,11 @@ public class Message {
         this.tag = tag;
     }
 
-    @Override
-    public String toString() {
-        return "Message{" +
-                "id=" + id +
-                ", text='" + text + '\'' +
-                ", tag='" + tag + '\'' +
-                '}';
+    public String getFilename() {
+        return filename;
+    }
+
+    public void setFilename(String filename) {
+        this.filename = filename;
     }
 }
