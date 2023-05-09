@@ -1,16 +1,14 @@
 package com.tweetclone.controller;
 
 
-import com.tweetclone.entity.Role;
 import com.tweetclone.entity.User;
-import com.tweetclone.repository.UserRepository;
+import com.tweetclone.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-
-import java.util.Collections;
 
 /**
  * @author Ivan Gordeev 07.05.2023
@@ -18,7 +16,7 @@ import java.util.Collections;
 @Controller
 public class RegistrationController {
     @Autowired
-    private UserRepository userRepository;
+    private UserService userService;
 
     @GetMapping("/registration")
     public String registration() {
@@ -27,14 +25,21 @@ public class RegistrationController {
 
     @PostMapping("/registration")
     public String doRegister(User user, Model model) {
-        User userFromDb = userRepository.findByUsername(user.getUsername());
-        if (userFromDb != null) {
+        if (!userService.addUser(user)) {
             model.addAttribute("message", "User is already exists!");
             return "registration";
         }
-        user.setActive(true);
-        user.setRoles(Collections.singleton(Role.USER));
-        userRepository.save(user);
         return "redirect:/login";
+    }
+
+    @GetMapping("/activate/{code}")
+    private String activate(Model model, @PathVariable String code) {
+        boolean isActive = userService.activeUser(code);
+        if (isActive) {
+            model.addAttribute("message", "User successfully activated");
+        } else {
+            model.addAttribute("message", "Activation code not found");
+        }
+        return "login";
     }
 }
