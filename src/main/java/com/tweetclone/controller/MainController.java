@@ -36,9 +36,7 @@ public class MainController {
         } else {
             messages = messageRepository.findAll();
         }
-        if (filter == null) {
-            filter = "";
-        }
+
         model.addAttribute("messages", messages);
         model.addAttribute("filter", filter);
         return "main";

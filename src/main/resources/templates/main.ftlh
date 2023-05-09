@@ -16,7 +16,7 @@
     <br>
     <div>Список сообщений</div>
     <form method="get" action="/main">
-        <input type="text" name="filter" value="${filter}">
+        <input type="text" name="filter">
         <button type="submit">Find</button>
     </form>
     <br>
