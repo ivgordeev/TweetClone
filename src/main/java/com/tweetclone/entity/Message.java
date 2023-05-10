@@ -10,7 +10,7 @@ import jakarta.persistence.*;
 public class Message {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Long id;
     private String text;
     private String tag;
 
@@ -41,11 +41,11 @@ public class Message {
         this.author = author;
     }
 
-    public int getId() {
+    public Long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Long id) {
         this.id = id;
     }
 

@@ -10,8 +10,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.util.Collections;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author Ivan Gordeev 08.05.2023
@@ -38,14 +38,18 @@ public class UserService implements UserDetailsService {
         user.setRoles(Collections.singleton(Role.USER));
         user.setActivationCode(UUID.randomUUID().toString());
         userRepository.save(user);
+        sendMessage(user);
+        return true;
+    }
+
+    private void sendMessage(User user) {
         if (StringUtils.hasLength(user.getEmail())) {
-            String message = String.format("Hello, %s!\n" +
-                    "Welcome to TweetClone.\n" +
-                    "To activate your account, please, visit next link: http://localhost:8080/activate/%s",
+            String message = String.format("Hello, %s! " +
+                            "Welcome to TweetClone.\n" +
+                            "To activate your account, please, visit next link: http://localhost:8080/activate/%s",
                     user.getUsername(), user.getActivationCode());
             mailSender.send(user.getEmail(), "Activation code", message);
         }
-        return true;
     }
 
     public boolean activeUser(String code) {
@@ -57,5 +61,46 @@ public class UserService implements UserDetailsService {
         user.setActive(true);
         userRepository.save(user);
         return true;
+    }
+
+    public List<User> findAll() {
+        return userRepository.findAll();
+    }
+
+    public void saveUser(User user, String username, Map<String, String> form) {
+        user.setUsername(username);
+
+        Set<String> roles = Arrays.stream(Role.values())
+                .map(Role::name)
+                .collect(Collectors.toSet());
+
+        user.getRoles().clear();
+
+        for (String key : form.keySet()) {
+            if (roles.contains(key)) {
+                user.getRoles().add(Role.valueOf(key));
+            }
+        }
+        userRepository.save(user);
+    }
+
+    public void updateProfile(User user, String password, String email) {
+        String userEmail = user.getEmail();
+        boolean isEmailChanged = (email != null && !email.equals(userEmail) ||
+                userEmail != null && !userEmail.equals(email));
+
+        if (StringUtils.hasLength(password)) {
+            user.setPassword(password);
+        }
+
+        if (isEmailChanged) {
+            user.setEmail(email);
+            if (StringUtils.hasLength(email)) {
+                user.setActivationCode(UUID.randomUUID().toString());
+                sendMessage(user);
+            }
+        }
+
+        userRepository.save(user);
     }
 }
