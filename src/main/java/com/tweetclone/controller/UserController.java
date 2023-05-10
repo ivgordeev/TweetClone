@@ -40,11 +40,9 @@ public class UserController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ADMIN')")
-    public String userSave(@RequestParam("userId") User user,
-                           @RequestParam Map<String, String> form,
+    public String userSave(@RequestParam("userId") User user, @RequestParam Map<String, String> form,
                            @RequestParam String username) {
         userService.saveUser(user, username, form);
-
         return "redirect:/user";
     }
 
@@ -56,8 +54,7 @@ public class UserController {
     }
 
     @PostMapping("/profile")
-    public String updateProfile(@AuthenticationPrincipal User user,
-                                @RequestParam String password,
+    public String updateProfile(@AuthenticationPrincipal User user, @RequestParam String password,
                                 @RequestParam String email) {
         userService.updateProfile(user, password, email);
         return "redirect:/user/profile";

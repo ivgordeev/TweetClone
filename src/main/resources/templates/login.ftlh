@@ -2,6 +2,10 @@
 <#import "parts/login.ftlh" as l>
 
 <@c.page>
-    ${message!}
+    <#if message??>
+        <div class="alert alert-${type}" role="alert">
+            ${message}
+        </div>
+    </#if>
     <@l.login "/login" false/>
 </@c.page>
