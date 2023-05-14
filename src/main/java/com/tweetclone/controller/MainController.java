@@ -3,9 +3,14 @@ package com.tweetclone.controller;
 import com.tweetclone.entity.Message;
 import com.tweetclone.entity.User;
 import com.tweetclone.repository.MessageRepository;
+import com.tweetclone.service.MessageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,6 +33,8 @@ import java.util.*;
 public class MainController {
     @Autowired
     private MessageRepository messageRepository;
+    @Autowired
+    private MessageService messageService;
     @Value("${upload.path}")
     private String uploadPath;
 
@@ -37,24 +44,19 @@ public class MainController {
     }
 
     @GetMapping("/main")
-    public String home(Model model, @RequestParam(required = false) String filter) {
-        List<Message> messages;
-
-        if (filter != null && !filter.isEmpty()) {
-            messages = messageRepository.findByTag(filter);
-        } else {
-            messages = messageRepository.findAll();
-        }
-
-        model.addAttribute("messages", messages);
+    public String home(Model model, @RequestParam(required = false, defaultValue = "") String filter,
+                       @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Message> page = messageService.messageList(pageable, filter);
+        model.addAttribute("page", page);
+        model.addAttribute("url", "/main");
         model.addAttribute("filter", filter);
         return "main";
     }
 
     @PostMapping("/main")
     public String add(@AuthenticationPrincipal User user, @Valid Message message,
-                      BindingResult bindingResult, @RequestParam("file") MultipartFile file,
-                      Model model) throws IOException {
+                      BindingResult bindingResult, @RequestParam("file") MultipartFile file, Model model,
+                      @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) throws IOException {
         message.setAuthor(user);
         if (bindingResult.hasErrors()) {
             Map<String, String> errorMap = ControllerUtil.getErrors(bindingResult);
@@ -65,8 +67,10 @@ public class MainController {
             model.addAttribute("message", null);
             messageRepository.save(message);
         }
-        List<Message> messages = messageRepository.findAll();
-        model.addAttribute("messages", messages);
+
+        Page<Message> page = messageService.messageList(pageable, "");
+        model.addAttribute("page", page);
+        model.addAttribute("url", "/main");
         return "main";
     }
 
@@ -87,16 +91,18 @@ public class MainController {
     public String userMessages(@AuthenticationPrincipal User currentUser,
                                @PathVariable User user,
                                Model model,
-                               @RequestParam(required = false) Message message) {
-        Set<Message> messages = user.getMessages();
+                               @RequestParam(required = false) Message message,
+                               @PageableDefault(sort = {"id"}, direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Message> page = messageRepository.findAllByAuthor(user, pageable);
 
         model.addAttribute("subscriptionsCount", user.getSubscriptions().size());
         model.addAttribute("subscribersCount", user.getSubscribers().size());
         model.addAttribute("isSubscriber", user.getSubscribers().contains(currentUser));
         model.addAttribute("userChannel", user);
 
-        model.addAttribute("messages", messages);
+        model.addAttribute("page", page);
         model.addAttribute("message", message);
+        model.addAttribute("url", "/user-messages/" + user.getId());
 
         model.addAttribute("isCurrentUser", user.equals(currentUser));
 
@@ -105,7 +111,8 @@ public class MainController {
 
     @PostMapping("/user-messages/{user}")
     public String updateMessage(@AuthenticationPrincipal User currentUser, @PathVariable Long user,
-                                @RequestParam("id") Message message, @RequestParam("text") String text, @RequestParam("tag") String tag,
+                                @RequestParam("id") Message message, @RequestParam("text") String text,
+                                @RequestParam("tag") String tag,
                                 @RequestParam("file") MultipartFile file) throws IOException {
 
         if (currentUser.equals(message.getAuthor())) {
